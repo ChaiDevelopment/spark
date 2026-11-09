@@ -1,0 +1,5 @@
+# Normalise line endings: LF in the repository (Linux hosts like Railway), regardless of OS.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

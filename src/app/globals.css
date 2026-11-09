@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ SPARK tokens */
+@theme {
+  --color-coral: #ff6482;
+  --color-coral-deep: #d93a5e; /* text/AA-safe coral on light backgrounds */
+  --color-peach: #ffb36b;
+  --color-lavender: #a88af5;
+  --color-lavender-deep: #6f4fd6;
+  --color-mint: #6bcbc1;
+  --color-mint-deep: #23877c;
+  --color-cream: #fff0e7;
+  --color-canvas: #fffaf8;
+  --color-ink: #27212b;
+  --color-ink-soft: #5d5361;
+  --color-ink-faint: #8f8494;
+  --color-line: #f0e2da;
+  --color-danger: #c8264b;
+
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  --shadow-soft: 0 1px 2px rgb(39 33 43 / 0.04), 0 8px 24px -8px rgb(39 33 43 / 0.12);
+  --shadow-card: 0 2px 4px rgb(39 33 43 / 0.04), 0 24px 48px -16px rgb(255 100 130 / 0.28);
+
+  --animate-spark: spark-pulse 2.4s ease-in-out infinite;
+  @keyframes spark-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.06); opacity: 0.85; }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-lavender-deep);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-coral) 25%, transparent);
+  }
+}
+
+@utility bg-spark {
+  background-image: linear-gradient(135deg, var(--color-coral) 0%, #ff8a73 50%, var(--color-peach) 100%);
+}
+@utility text-spark {
+  background-image: linear-gradient(120deg, var(--color-coral-deep), var(--color-coral) 45%, var(--color-lavender-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility bg-glow {
+  background:
+    radial-gradient(60rem 30rem at 10% -10%, color-mix(in srgb, var(--color-peach) 30%, transparent), transparent 60%),
+    radial-gradient(50rem 30rem at 110% 10%, color-mix(in srgb, var(--color-lavender) 22%, transparent), transparent 60%),
+    var(--color-canvas);
+}
+@utility safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
