@@ -48,6 +48,7 @@ export async function signInAction(input: unknown, next?: string): Promise<Actio
 
 export async function signInWithGoogleAction(next?: string): Promise<ActionResult<never> | never> {
   if (!isSupabaseConfigured()) return notConfigured();
+  if (!publicEnv.googleAuthEnabled) return fail("Google sign-in isn't available.");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",

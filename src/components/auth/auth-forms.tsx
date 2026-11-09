@@ -18,6 +18,7 @@ import {
   signUpAction,
 } from "@/server/actions/auth";
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from "@/lib/validation/schemas";
+import { publicEnv } from "@/lib/env";
 
 function GoogleIcon() {
   return (
@@ -59,6 +60,19 @@ function Divider() {
   );
 }
 
+/** Google sign-in block, shown only when NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true. */
+function SocialSignIn({ next }: { next?: string }) {
+  if (!publicEnv.googleAuthEnabled) return <div className="mt-8" />;
+  return (
+    <>
+      <div className="mt-8">
+        <GoogleButton next={next} />
+      </div>
+      <Divider />
+    </>
+  );
+}
+
 function PasswordInput(props: React.ComponentProps<typeof Input>) {
   const [show, setShow] = useState(false);
   return (
@@ -97,10 +111,7 @@ export function LoginForm({ next, error, verified }: { next?: string; error?: st
     <div>
       <h1 className="font-display text-3xl font-extrabold">Welcome back</h1>
       <p className="mt-2 text-ink-soft">Good to see you. Let&apos;s find your spark.</p>
-      <div className="mt-8">
-        <GoogleButton next={next} />
-      </div>
-      <Divider />
+      <SocialSignIn next={next} />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {verified && !formError && (
           <p role="status" className="rounded-2xl bg-mint/15 px-4 py-3 text-sm font-medium text-ink">
@@ -162,10 +173,7 @@ export function SignUpForm() {
     <div>
       <h1 className="font-display text-3xl font-extrabold">Create your account</h1>
       <p className="mt-2 text-ink-soft">It takes about five minutes to set up a profile people want to read.</p>
-      <div className="mt-8">
-        <GoogleButton next="/onboarding" />
-      </div>
-      <Divider />
+      <SocialSignIn next="/onboarding" />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {formError && (
           <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">

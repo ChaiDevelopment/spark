@@ -21,7 +21,10 @@ Google sign-in goes through Supabase Auth. SPARK never sees the Google client se
 2. Paste the Client ID and Client secret, then save.
 3. Make sure `https://<your-domain>/auth/callback` is listed under **Authentication → URL Configuration → Redirect URLs**.
 
-## 3. How it works in SPARK
+## 3. Turn the button on
+Google sign-in is **hidden by default**. After steps 1–2, set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` on the app service and redeploy. The value is read at build time.
+
+## 4. How it works in SPARK
 1. **Continue with Google** calls `signInWithOAuth`, with `redirectTo = {NEXT_PUBLIC_APP_URL}/auth/callback?next=…`.
 2. Google redirects to Supabase, and Supabase redirects to `/auth/callback?code=…`.
 3. The route exchanges the code for a session cookie (PKCE). `next` is accepted only if it is a same-origin path.

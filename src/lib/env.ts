@@ -10,6 +10,8 @@ export const publicEnv = {
   // Accepts either a legacy anon JWT or a new `sb_publishable_...` key.
   supabaseAnonKey: (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "").trim(),
   appUrl: (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim().replace(/\/$/, ""),
+  /** Google sign-in is hidden (and refused server-side) unless explicitly enabled. */
+  googleAuthEnabled: (process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED || "").trim() === "true",
 };
 
 export function isSupabaseConfigured(): boolean {

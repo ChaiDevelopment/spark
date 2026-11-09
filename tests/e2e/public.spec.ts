@@ -42,7 +42,10 @@ test.describe("auth forms", () => {
   test("login form and links", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /continue with google/i })).toBeVisible();
+    // Google sign-in is hidden unless NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true.
+    await expect(page.getByRole("button", { name: /continue with google/i })).toHaveCount(
+      process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" ? 1 : 0,
+    );
     await page.getByRole("link", { name: "Forgot password?" }).click();
     await expect(page).toHaveURL(/\/forgot-password$/);
   });
