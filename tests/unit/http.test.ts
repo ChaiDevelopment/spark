@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { isSameOrigin } from "@/server/http";
 
 const req = (url: string, headers: Record<string, string>) => new Request(url, { method: "POST", headers });
@@ -13,7 +13,7 @@ describe("isSameOrigin", () => {
   });
 
   it("allows the public origin behind a reverse proxy (internal req.url host)", () => {
-    const r = req("http://localhost:8080/api/photos/upload-url", {
+    const r = req("http://localhost:8080/api/photos/upload", {
       origin: "https://spark-production-73e8.up.railway.app",
       host: "spark-production-73e8.up.railway.app",
       "x-forwarded-host": "spark-production-73e8.up.railway.app",
@@ -22,7 +22,7 @@ describe("isSameOrigin", () => {
   });
 
   it("rejects a cross-site origin", () => {
-    const r = req("http://localhost:8080/api/photos/upload-url", {
+    const r = req("http://localhost:8080/api/photos/upload", {
       origin: "https://evil.example",
       host: "spark-production-73e8.up.railway.app",
       "x-forwarded-host": "spark-production-73e8.up.railway.app",

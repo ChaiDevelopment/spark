@@ -59,7 +59,9 @@ test.describe("route protection", () => {
 
 test.describe("API authorization", () => {
   test("photo and account APIs reject unauthenticated requests", async ({ request }) => {
-    const upload = await request.post("/api/photos/upload-url", { data: { contentType: "image/jpeg", size: 1000 } });
+    const upload = await request.post("/api/photos/upload", {
+      multipart: { file: { name: "a.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not really a jpeg") } },
+    });
     expect(upload.status()).toBe(401);
     const view = await request.post("/api/photos/view", { data: { ids: ["00000000-0000-4000-8000-000000000000"], variant: "main" } });
     expect(view.status()).toBe(401);
@@ -70,8 +72,8 @@ test.describe("API authorization", () => {
   });
 
   test("cross-origin state changes are refused", async ({ request }) => {
-    const res = await request.post("/api/photos/upload-url", {
-      data: { contentType: "image/jpeg", size: 1000 },
+    const res = await request.post("/api/photos/upload", {
+      multipart: { file: { name: "a.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not really a jpeg") } },
       headers: { Origin: "https://evil.example" },
     });
     expect(res.status()).toBe(403);

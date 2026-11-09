@@ -3,9 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isServiceRoleConfigured } from "@/lib/env.server";
 import { getApiUser } from "@/server/auth";
 import { errorResponse, isSameOrigin, json } from "@/server/http";
-import { deleteObjects, keyBelongsTo } from "@/server/r2";
+import { deleteObjects, keyBelongsTo } from "@/server/storage";
 
-/** Delete one of the caller's photos (R2 objects first, then the record). */
+/** Delete one of the caller's photos (storage objects first, then the record). */
 export async function DELETE(req: Request, ctx: RouteContext<"/api/photos/[id]">) {
   if (!isSameOrigin(req)) return errorResponse(403, "Forbidden");
   const user = await getApiUser();
@@ -29,7 +29,7 @@ export async function DELETE(req: Request, ctx: RouteContext<"/api/photos/[id]">
   try {
     await deleteObjects(keys);
   } catch (e) {
-    console.error("R2 delete failed", e);
+    console.error("storage delete failed", e);
     return errorResponse(502, "Couldn't delete the photo. Please try again.");
   }
   await admin.from("profile_photos").delete().eq("id", photo.id).eq("user_id", user.userId);

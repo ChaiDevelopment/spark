@@ -1,44 +1,87 @@
-# Deployment
+# Deployment (Railway)
 
-Target: **Vercel Hobby**, **Supabase Free** and **Cloudflare R2** within its free tier. Nothing in this guide requires a paid plan. Do not upgrade any service without an explicit decision.
+Production runs on **Railway**, which hosts the Next.js app, the photo bucket and the daily cron job. Data lives in **Supabase**.
 
-## Checklist
+| Piece | Where |
+|---|---|
+| Next.js app | Railway service `spark`, deployed from GitHub (`main`) |
+| Photo storage | Railway Storage Bucket, see [STORAGE_SETUP.md](STORAGE_SETUP.md) |
+| Daily cleanup | Railway cron service running `scripts/cron-cleanup.mjs` |
+| Database, auth, realtime | Supabase, see [SUPABASE_SETUP.md](SUPABASE_SETUP.md) |
 
-1. **Supabase:** create the project, run `npm run db:push`, and configure Auth URLs, email templates, SMTP and Google → [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
-2. **R2:** create a private bucket, an API token scoped to that bucket, and a CORS rule that includes the production origin → [R2_SETUP.md](R2_SETUP.md)
-3. **Vercel:**
-   1. **Add New → Project** and import the repository. The framework is detected as Next.js automatically.
-   2. Set all variables from [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for **Production**, and for **Preview** if you use it. Set `NEXT_PUBLIC_APP_URL` to the production URL and `CRON_SECRET` to a random value.
-   3. Deploy.
-   4. Add the production URL to the Supabase redirect URLs, the Google OAuth origins and the R2 CORS rule.
-4. **Cron:** `vercel.json` schedules `/api/cron/cleanup` daily at 03:00 UTC. The Hobby plan allows daily crons. Vercel sends `CRON_SECRET` automatically.
-5. **First admin:** run the bootstrap SQL in [SUPABASE_SETUP.md](SUPABASE_SETUP.md#6-create-the-first-admin).
-6. **Smoke test:**
-   1. sign up and verify the email;
-   2. complete onboarding;
-   3. upload a photo and approve it in `/admin/moderation`;
-   4. answer the chemistry questions;
-   5. have a second account like the first one back, and check that a match appears;
-   6. chat in real time;
-   7. block and report;
-   8. delete the test account.
+**Costs:** Railway has no permanent free plan. New accounts get a one-time trial credit; after that a paid plan is required. Check <https://railway.com/pricing> and the usage view before the trial ends. Supabase stays on its Free plan. Do not upgrade any plan without an explicit decision.
 
-## Free-tier limits
+## 1. Supabase
+1. Apply the migrations with `npx supabase db push`, as described in SUPABASE_SETUP.md. On networks without IPv6, use the **Session Pooler** connection string (Project Settings → Database → Connection string), not `db.<ref>.supabase.co`.
+2. Configure the Auth URLs, email templates and SMTP.
 
-| Service | Limit (free) | What hits it in SPARK | How to monitor |
-|---|---|---|---|
-| Supabase database | 500 MB | Messages and notifications make up most rows. Photos are not stored there. | Project Settings → Usage |
-| Supabase egress | 5 GB/month | API responses | Usage |
-| Supabase Realtime | 200 concurrent connections; 2M messages/month | About 1 connection per open tab, plus chat channels | Usage → Realtime |
-| Supabase Auth | 50,000 monthly active users | — | Usage |
-| Supabase emails | Built-in SMTP sends only a few per hour | Sign-up and password-reset emails | Use custom SMTP for real testers |
-| Supabase pausing | After ~7 days without activity | — | The daily cron keeps the project active |
-| R2 storage | 10 GB-month | Photos, ~0.2 MB per photo | R2 → Metrics |
-| R2 operations | 1M Class A, 10M Class B per month | Uploads and views | R2 → Metrics |
-| Vercel Hobby | 100 GB bandwidth, function execution limits, daily crons only; **non-commercial use** | Pages and API | Vercel → Usage |
+## 2. App service
+1. In Railway: **New Project → Deploy from GitHub repo** and choose the repository. Root directory: `/`. Build and start commands are detected automatically (`npm run build`, `npm start`).
+2. Go to **Settings → Networking → Generate Domain**. Railway asks for a port: use **8080**. Railway sets `PORT=8080` and `next start` listens on it.
+3. Under **Settings → Deploy**, set the healthcheck path to `/`. For the region, *Southeast Asia (Singapore)* is closest to Indonesian users.
+4. Under **Variables**, add only the variables below. Railway may also suggest names it finds in the code. **Delete any suggestion that you don't fill in**, and never keep `${{ secret() }}` on a credential, because it generates a random, invalid value.
 
-**Note:** Vercel Hobby is for non-commercial projects only. A paid, commercial launch requires Vercel Pro or another host. Decide this before monetizing.
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+   NEXT_PUBLIC_APP_URL=https://<your-domain>.up.railway.app
+   PHOTO_MODERATION_MODE=manual
+   CRON_SECRET=<random 64 hex chars: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
+   S3_ENDPOINT=${{photos.ENDPOINT}}
+   S3_BUCKET=${{photos.BUCKET}}
+   S3_ACCESS_KEY_ID=${{photos.ACCESS_KEY_ID}}
+   S3_SECRET_ACCESS_KEY=${{photos.SECRET_ACCESS_KEY}}
+   S3_REGION=${{photos.REGION}}
+   ```
+
+   `NEXT_PUBLIC_*` values and `S3_ENDPOINT` are read **at build time**. After changing them, redeploy.
+
+5. In **Supabase → Authentication → URL Configuration**, set the Site URL to the Railway domain. Add `https://<domain>/auth/callback` and `https://<domain>/auth/confirm` to the Redirect URLs. If you use Google sign-in, add the domain to the Authorized JavaScript origins in Google Cloud.
+
+The app is reverse-proxied by Railway. The same-origin (CSRF) check compares the browser's `Origin` with `X-Forwarded-Host`, `Host` and `NEXT_PUBLIC_APP_URL`, so `NEXT_PUBLIC_APP_URL` must match the public domain exactly.
+
+## 3. Photo bucket
+Follow [STORAGE_SETUP.md](STORAGE_SETUP.md). The bucket service should be named `photos` so that the references above resolve.
+
+## 4. Cron service (daily cleanup)
+1. In the same project, choose **+ Create → GitHub Repo** and select the same repository again. Name the service `cron`.
+2. **Settings:**
+   - Start command: `node scripts/cron-cleanup.mjs`
+   - **Cron Schedule:** `0 20 * * *`. Railway runs schedules in UTC, so this is 03:00 WIB.
+   - Remove the generated domain; this service doesn't need one.
+3. **Variables:**
+   ```env
+   CRON_SECRET=${{spark.CRON_SECRET}}
+   CRON_TARGET_URL=https://${{spark.RAILWAY_PUBLIC_DOMAIN}}
+   ```
+The job calls `/api/cron/cleanup`. That endpoint removes abandoned uploads and rejected photos older than 30 days, and prunes rate-limit rows. The job exits non-zero on failure, so failed runs show up in Railway.
+
+## 5. Every deploy
+Each push to `main` triggers a new build. Smoke test after a release:
+1. Sign up and verify the email.
+2. Complete onboarding, including a photo.
+3. Approve the photo in `/admin/moderation`.
+4. Answer the chemistry questions.
+5. With a second account, like each other and confirm the match.
+6. Chat in real time.
+7. Block and report.
+8. Delete the test account.
+
+## Limits to watch
+
+| Service | Limit | Where to look |
+|---|---|---|
+| Railway | Trial credit, then plan usage (CPU, RAM, egress, bucket GB) | Project → Usage |
+| Supabase database | 500 MB (Free) | Project Settings → Usage |
+| Supabase egress | 5 GB/month | Usage |
+| Supabase Realtime | 200 concurrent connections; 2M messages/month | Usage → Realtime |
+| Supabase email | The built-in SMTP sends only a few emails per hour | Use custom SMTP before inviting testers |
+| Supabase pausing | Free projects pause after about 7 days idle | The daily cron keeps the project active |
 
 ## Rollback
-- **App:** use **Promote to Production** on the previous deployment in Vercel.
-- **Database:** migrations are forward-only. Write a new corrective migration; never edit a migration that has already been applied.
+- **App:** Railway → service → **Deployments** → choose an earlier deployment → **Redeploy**.
+- **Database:** migrations are forward-only. Write a new corrective migration; never edit one that has already been applied.
+
+## Alternative: Vercel
+`vercel.json` still schedules the cron job for Vercel. Use the same variables there, and Vercel sends `CRON_SECRET` automatically.

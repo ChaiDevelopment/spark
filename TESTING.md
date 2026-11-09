@@ -5,7 +5,7 @@
 | Unit | `npm run test:unit` | Nothing | Chemistry engine (determinism, weights, missing answers, Jaccard, matrices, versions); image pipeline (magic bytes, EXIF/GPS stripping, sizes, rejection of fake or animated files) |
 | Database / RLS | `npm run test:db` | Nothing (in-process Postgres via PGlite) | Applies **every migration** in order, then tests authorization as anonymous users, several regular users, a moderator and an admin: private data, protected columns, the age gate, discovery filters, likes, limits, idempotent matching, blocking, chat membership and impersonation, reports, staff boundaries, audit logs, notifications and maintenance |
 | E2E (public) | `npm run test:e2e -- tests/e2e/public.spec.ts` | `npm run build` first | Landing and legal pages, auth form validation, protected-route redirects, 401/403 on APIs, cross-origin refusal, cron secret, manifest and service worker, security headers, no horizontal overflow, on **mobile, tablet and desktop** |
-| E2E (journeys) | `E2E_SUPABASE=1 npm run test:e2e -- tests/e2e/flows.spec.ts` | A **dedicated test** Supabase project and R2 bucket, configured in `.env.local` | Two users sign up, onboard, upload photos, answer chemistry, like each other, match and chat in real time |
+| E2E (journeys) | `E2E_SUPABASE=1 npm run test:e2e -- tests/e2e/flows.spec.ts` | A **dedicated test** Supabase project and storage bucket, configured in `.env.local` | Two users sign up, onboard, upload photos, answer chemistry, like each other, match and chat in real time |
 
 Also run `npm run lint` and `npm run typecheck`.
 
@@ -18,6 +18,6 @@ Also run `npm run lint` and `npm run typecheck`.
 ## Manual checks before a release
 - Google sign-in works end to end.
 - Password-reset email links open `/reset-password`.
-- An R2 object URL without a signature returns 403.
+- A bucket object URL without a signature is refused.
 - A non-staff account gets 404 at `/admin`.
 - The app installs as a PWA on Android Chrome and iOS Safari, and the offline page appears when the network is off.

@@ -32,7 +32,7 @@ Three schemas are involved:
 | `user_preferences` | Age range, interested-in genders, location scope | Owner reads and updates |
 | `interests` / `user_interests` | Catalogue, and a user's picks (cap enforced by trigger) | Catalogue is public; picks are owner-managed and visible on viewable profiles |
 | `user_verification` | Verification status (future feature) | Owner, viewable profiles, staff |
-| `profile_photos` | R2 `staging_key`, `object_key`, `thumb_key`; `status` (`uploading` → `pending` → `approved`/`rejected`); `position`; size; `processing_version` | Owner reads all of their own rows. Others see only `approved` rows of viewable profiles. **No client writes**: the server routes use the service role. |
+| `profile_photos` | Storage `staging_key` (per-upload reservation key), `object_key`, `thumb_key`; `status` (`uploading` → `pending` → `approved`/`rejected`); `position`; size; `processing_version` | Owner reads all of their own rows. Others see only `approved` rows of viewable profiles. **No client writes**: the server routes use the service role. |
 
 ### Chemistry
 

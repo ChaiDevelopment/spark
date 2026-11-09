@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ageFromDob } from "@/lib/utils";
-import { ACCEPTED_IMAGE_TYPES, MAX_MESSAGE_LENGTH, MAX_UPLOAD_BYTES } from "@/lib/constants";
+import { MAX_MESSAGE_LENGTH } from "@/lib/constants";
 
 const gender = z.enum(["woman", "man", "non_binary", "other"]);
 const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
@@ -120,11 +120,6 @@ export const messageSchema = z.object({
 });
 
 // ---------------------------------------------------------------- Photos
-export const uploadRequestSchema = z.object({
-  contentType: z.enum(ACCEPTED_IMAGE_TYPES, { error: "Use a JPEG, PNG, WebP or AVIF image" }),
-  size: z.number().int().positive().max(MAX_UPLOAD_BYTES, { error: "Images must be 10 MB or smaller" }),
-});
-export const photoIdSchema = z.object({ photoId: z.uuid() });
 export const photoViewSchema = z.object({
   ids: z.array(z.uuid()).min(1).max(60),
   variant: z.enum(["thumb", "main"]),

@@ -24,18 +24,18 @@ async function api<T>(url: string, init: RequestInit): Promise<T> {
 }
 
 /**
- * Upload flow: validate locally → ask the server for a presigned URL → PUT the
- * file straight to private R2 → ask the server to verify + process it.
+ * Upload flow: validate locally → send the file to the server, which verifies,
+ * strips metadata, re-encodes and stores it in the private bucket.
  */
 async function uploadPhoto(file: File): Promise<ManagedPhoto> {
-  const { photoId, uploadUrl, headers } = await api<{ photoId: string; uploadUrl: string; headers: Record<string, string> }>(
-    "/api/photos/upload-url",
-    { method: "POST", body: JSON.stringify({ contentType: file.type, size: file.size }) },
-  );
-  const put = await fetch(uploadUrl, { method: "PUT", body: file, headers });
-  if (!put.ok) throw new Error("Upload to storage failed. Check your connection and try again.");
-  const { photo } = await api<{ photo: ManagedPhoto }>("/api/photos/confirm", { method: "POST", body: JSON.stringify({ photoId }) });
-  return photo;
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/photos/upload", { method: "POST", body: form });
+  const body = (await res.json().catch(() => ({}))) as { photo?: ManagedPhoto; error?: string };
+  if (!res.ok || !body.photo) {
+    throw new Error(body.error ?? (res.status === 413 ? "Images must be 10 MB or smaller." : "Upload failed. Check your connection and try again."));
+  }
+  return body.photo;
 }
 
 export function PhotoManager({ initial, onChange }: { initial: ManagedPhoto[]; onChange?: (photos: ManagedPhoto[]) => void }) {

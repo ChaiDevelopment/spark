@@ -10,22 +10,22 @@ Status as of 2026-11-10.
 | 1. Foundation (Next.js, TypeScript, Tailwind, design tokens, Supabase SSR) | ✅ | |
 | 2. Database and authentication | ✅ Code complete | 9 migrations, RLS on every table, email/password and Google, protected routes. RLS is tested on Postgres (PGlite). |
 | 3. Onboarding and profile | ✅ | Server-side 18+ gate, calculated completion |
-| 4. R2 image system | ✅ Code complete | Presign, confirm with re-encoding and EXIF stripping, signed view, delete, reorder, cleanup cron. **Not yet run against a real bucket.** |
+| 4. Photo storage | ✅ Code complete | Server-side upload with re-encoding and EXIF stripping, signed view, delete, reorder, cleanup cron. Moved from Cloudflare R2 to a Railway Storage Bucket (S3-compatible, no CORS needed). **Not yet run against a real bucket.** |
 | 5. Chemistry | ✅ | 42 questions, 6 weighted dimensions, deterministic and versioned, with explanations |
 | 6. Discovery and matching | ✅ | Filters, daily limits, atomic idempotent matching |
 | 7. Chat | ✅ Code complete | Realtime, receipts, typing (Broadcast), pagination, unmatch, block, archive |
 | 8. Safety and admin | ✅ | Reports, blocks, moderation queue, photo review, suspension, roles, audit log |
-| 9. PWA and deployment | 🟡 | Manifest, service worker and offline page are done, and the docs are written. **Not deployed:** this needs credentials and your approval. |
+| 9. PWA and deployment | 🟡 | Manifest, service worker and offline page are done. Deployed to Railway (`spark-production-73e8.up.railway.app`) against the Supabase project with all migrations applied. Pending: photo bucket and cron service. |
 
 ## Not yet verified (needs credentials)
 The code for these exists, but nothing has run them against live services yet:
 - Real sign-up, email verification and password reset on a Supabase project
 - Google OAuth
-- Photo upload, view and delete on a real R2 bucket, including the CORS rule
+- Photo upload, view and delete on the Railway bucket
 - Realtime delivery and typing on hosted Supabase
 - The `flows.spec.ts` end-to-end journey (`E2E_SUPABASE=1`)
 
-**Next step:** create a *test* Supabase project and R2 bucket, fill in `.env.local`, run `npm run db:push`, then run `E2E_SUPABASE=1 npm run test:e2e`.
+**Next step:** create the Railway bucket (STORAGE_SETUP.md), fill in `S3_*` locally and on Railway, then run `E2E_SUPABASE=1 npm run test:e2e`.
 
 ## Known limitations and deliberate choices
 - **Photo moderation** is manual by default (`PHOTO_MODERATION_MODE=manual`). There is no automated nudity or face detection; a free option would need evaluation. `auto` mode approves photos after the technical checks only.
@@ -34,7 +34,7 @@ The code for these exists, but nothing has run them against live services yet:
 - **Push notifications:** `device_tokens` and `notification_preferences` exist, but Web Push (VAPID and a sender) is not implemented. In-app notifications work.
 - **Identity verification:** the `user_verification` table exists; there is no selfie or ID verification flow yet.
 - **Backups:** the Supabase Free plan has none, so run `supabase db dump` manually.
-- **Hosting:** Vercel Hobby does not allow commercial use, so any paid launch needs a hosting decision first.
+- **Hosting:** Railway has no permanent free plan; budget for it before the trial credit ends.
 
 ## Post-MVP (in order)
 1. Custom SMTP and branded auth emails

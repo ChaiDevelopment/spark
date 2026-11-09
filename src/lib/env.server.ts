@@ -10,21 +10,33 @@ const read = (...names: string[]): string => {
   return "";
 };
 
+/**
+ * Private S3-compatible photo storage. Provider-neutral; names are tried in order:
+ *   S3_*                      — preferred (set these explicitly)
+ *   BUCKET / ENDPOINT / …     — Railway Storage Bucket variable names
+ *   R2_*                      — Cloudflare R2 (endpoint derived from R2_ACCOUNT_ID)
+ */
+const r2AccountId = read("R2_ACCOUNT_ID");
+const storageEndpoint =
+  read("S3_ENDPOINT", "ENDPOINT", "R2_ENDPOINT") || (r2AccountId ? `https://${r2AccountId}.r2.cloudflarestorage.com` : "");
+
 export const serverEnv = {
   // Accepts a legacy service_role JWT or a new `sb_secret_...` key.
   supabaseServiceKey: read("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
-  r2AccountId: read("R2_ACCOUNT_ID"),
-  r2AccessKeyId: read("R2_ACCESS_KEY_ID"),
-  r2SecretAccessKey: read("R2_SECRET_ACCESS_KEY"),
-  r2Bucket: read("R2_BUCKET_NAME"),
-  r2Endpoint: read("R2_ENDPOINT"),
+  storageEndpoint,
+  storageBucket: read("S3_BUCKET", "BUCKET", "R2_BUCKET_NAME"),
+  storageAccessKeyId: read("S3_ACCESS_KEY_ID", "ACCESS_KEY_ID", "R2_ACCESS_KEY_ID"),
+  storageSecretAccessKey: read("S3_SECRET_ACCESS_KEY", "SECRET_ACCESS_KEY", "R2_SECRET_ACCESS_KEY"),
+  storageRegion: read("S3_REGION", "REGION") || "auto",
+  /** Only for providers that require path-style URLs (e.g. older Railway buckets, MinIO). */
+  storageForcePathStyle: read("S3_FORCE_PATH_STYLE") === "true",
   /** 'manual' (default): photos wait for moderator approval. 'auto': approved after automated checks. */
   photoModerationMode: read("PHOTO_MODERATION_MODE") === "auto" ? "auto" : "manual",
   cronSecret: read("CRON_SECRET"),
 } as const;
 
-export function isR2Configured(): boolean {
-  return Boolean(serverEnv.r2AccessKeyId && serverEnv.r2SecretAccessKey && serverEnv.r2Bucket && (serverEnv.r2Endpoint || serverEnv.r2AccountId));
+export function isStorageConfigured(): boolean {
+  return Boolean(serverEnv.storageEndpoint && serverEnv.storageBucket && serverEnv.storageAccessKeyId && serverEnv.storageSecretAccessKey);
 }
 
 export function isServiceRoleConfigured(): boolean {

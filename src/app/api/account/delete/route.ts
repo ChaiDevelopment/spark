@@ -1,15 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isR2Configured, isServiceRoleConfigured } from "@/lib/env.server";
+import { isStorageConfigured, isServiceRoleConfigured } from "@/lib/env.server";
 import { deleteAccountSchema } from "@/lib/validation/schemas";
 import { getApiUser } from "@/server/auth";
 import { errorResponse, isSameOrigin, json, parseBody } from "@/server/http";
-import { deleteObjects } from "@/server/r2";
+import { deleteObjects } from "@/server/storage";
 
 /**
  * Permanently delete the signed-in user's account.
  *
- *  1. Delete every R2 object under the user's photo records.
+ *  1. Delete every storage object under the user's photo records.
  *  2. Record a minimal safety event (user id only) for abuse investigations.
  *  3. Delete the Supabase Auth user → ON DELETE CASCADE removes the profile,
  *     preferences, answers, likes, matches, conversations and messages.
@@ -41,11 +41,11 @@ export async function POST(req: Request) {
     p.thumb_key,
   ]);
   if (keys.some(Boolean)) {
-    if (!isR2Configured()) return errorResponse(503, "Photo storage isn't configured; can't remove your photos.");
+    if (!isStorageConfigured()) return errorResponse(503, "Photo storage isn't configured; can't remove your photos.");
     try {
       await deleteObjects(keys);
     } catch (e) {
-      console.error("R2 delete during account deletion failed", e);
+      console.error("storage delete during account deletion failed", e);
       return errorResponse(502, "Couldn't remove your photos. Please try again.");
     }
   }

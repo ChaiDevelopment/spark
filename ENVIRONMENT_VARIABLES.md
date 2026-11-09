@@ -1,22 +1,26 @@
 # Environment variables
 
-Copy `.env.example` to `.env.local` for development. On Vercel, set these values in **Project → Settings → Environment Variables**. Never commit `.env.local`; it is ignored by `.gitignore`.
+Copy `.env.example` to `.env.local` for development. In production, set these values on the Railway service under **Variables**. Never commit `.env.local`; it is ignored by `.gitignore`.
 
-**Rule:** only variables that start with `NEXT_PUBLIC_` reach the browser bundle. Every secret is read in `src/lib/env.server.ts`, which imports `server-only`, so the build fails if a client component imports it.
+**Rule:** only variables that start with `NEXT_PUBLIC_` reach the browser bundle. Every secret is read in `src/lib/env.server.ts`, which imports `server-only`. Empty or whitespace-only values count as **unset**, so a blank variable left on a dashboard never shadows its alternative name.
 
 | Variable | Exposure | Required | Description |
 |---|---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Public | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Yes | Publishable key (`sb_publishable_…`) or legacy anon JWT. It is safe to expose because RLS protects the data. `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is also accepted. |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | For photos, account deletion and cron | Secret key (`sb_secret_…`) or legacy service_role JWT. It **bypasses RLS**. `SUPABASE_SECRET_KEY` is also accepted. |
-| `R2_ACCOUNT_ID` | **Secret** | For photos | Cloudflare account ID |
-| `R2_ACCESS_KEY_ID` | **Secret** | For photos | R2 API token access key |
-| `R2_SECRET_ACCESS_KEY` | **Secret** | For photos | R2 API token secret |
-| `R2_BUCKET_NAME` | **Secret** | For photos | Private bucket name |
-| `R2_ENDPOINT` | **Secret** | No | S3 endpoint override. Defaults to `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` |
-| `NEXT_PUBLIC_APP_URL` | Public | Yes | Canonical app URL, without a trailing slash. Used for auth redirect links. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public | Yes | `sb_publishable_…` key. It is safe in the browser because RLS protects the data. The legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` is also accepted. |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | For photos, account deletion and cron | `sb_secret_…` key or legacy service_role JWT. It **bypasses RLS**. `SUPABASE_SECRET_KEY` is also accepted. |
+| `S3_ENDPOINT` | Server (also read at build for CSP) | For photos | S3 API endpoint. On Railway: `https://t3.storageapi.dev` |
+| `S3_BUCKET` | **Secret** | For photos | The bucket's unique S3 name (`BUCKET` on Railway) |
+| `S3_ACCESS_KEY_ID` | **Secret** | For photos | Bucket access key |
+| `S3_SECRET_ACCESS_KEY` | **Secret** | For photos | Bucket secret key |
+| `S3_REGION` | Server | No | Default `auto` |
+| `S3_FORCE_PATH_STYLE` | Server | No | `true` only if the provider requires path-style URLs |
+| `NEXT_PUBLIC_APP_URL` | Public | Yes | Public app URL without a trailing slash. Used for auth redirect links and for the same-origin check behind proxies. |
 | `PHOTO_MODERATION_MODE` | Server | No | `manual` (default): new photos wait for a moderator. `auto`: approved after the automated checks. |
-| `CRON_SECRET` | **Secret** | In production | A random string of at least 32 characters. Vercel Cron sends it as `Authorization: Bearer …` to `/api/cron/cleanup`. Generate one with `openssl rand -hex 32`. |
+| `CRON_SECRET` | **Secret** | In production | Random string of at least 32 characters, sent as `Authorization: Bearer …` to `/api/cron/cleanup` |
+| `CRON_TARGET_URL` | Cron service only | On the cron service | Base URL the cron script calls. Falls back to `NEXT_PUBLIC_APP_URL`. |
+
+Storage also accepts Railway's raw bucket variable names (`ENDPOINT`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`) and the legacy Cloudflare names (`R2_ACCOUNT_ID`, `R2_ENDPOINT`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). `S3_*` takes precedence.
 
 ## Test-only variables
 
@@ -27,5 +31,5 @@ Copy `.env.example` to `.env.local` for development. On Vercel, set these values
 | `PLAYWRIGHT_BROWSERS_PATH` | Optional location for Playwright browsers, for example on another drive |
 
 ## When a variable is missing
-- **No Supabase URL or key:** public pages still work. Protected pages redirect to `/login`, and the auth forms show a "not configured" error.
-- **No service role key or R2 variables:** photo, account-deletion and cron endpoints return `503`, with a clear message. Nothing pretends to succeed.
+- **No Supabase URL or key:** public pages still work. Protected pages redirect to `/login`, and the auth forms say Supabase isn't connected.
+- **No service role key or storage variables:** photo, account-deletion and cron endpoints return `503` with a clear message. Nothing pretends to succeed.

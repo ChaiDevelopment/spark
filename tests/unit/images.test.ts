@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { ImageRejectedError, detectImageType, processProfileImage } from "@/server/images";
-import { keyBelongsTo, photoKeys, stagingKey } from "@/server/r2";
+import { keyBelongsTo, photoKeys, stagingKey } from "@/server/storage";
 
 async function jpegWithGps(width = 2400, height = 1800): Promise<Buffer> {
   return sharp({ create: { width, height, channels: 3, background: { r: 255, g: 100, b: 130 } } })

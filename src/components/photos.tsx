@@ -5,7 +5,7 @@ import { UserRound } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
 
 /**
- * Signed URL loader for private R2 photos. Requests made in the same tick are
+ * Signed URL loader for private photos. Requests made in the same tick are
  * batched into one POST /api/photos/view call; URLs are cached in memory until
  * shortly before they expire. Nothing is persisted to storage.
  */

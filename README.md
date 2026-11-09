@@ -6,8 +6,8 @@ SPARK is a mobile-first dating web app for adults (18+), built for the Indonesia
 |---|---|
 | App | Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind CSS 4, Radix/shadcn-style UI, Framer Motion, React Hook Form + Zod |
 | Auth, DB, Realtime | Supabase (Auth, PostgreSQL 17, RLS, Realtime) |
-| Photos | Cloudflare R2 (private bucket, presigned URLs), processed with `sharp` |
-| Hosting | Vercel (Hobby tier is enough for the MVP) |
+| Photos | Railway Storage Bucket (private, S3-compatible, presigned view URLs), processed with `sharp` |
+| Hosting | Railway |
 | Tests | Vitest (unit + PGlite-based migration/RLS tests), React Testing Library, Playwright |
 
 ## Quick start (clean machine)
@@ -24,7 +24,7 @@ npm run dev                         # http://localhost:3000
 Without credentials the public pages (landing, legal, auth forms) still render, and protected pages redirect to `/login`. To use the app for real you need:
 
 1. **A Supabase project**, with migrations applied → [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
-2. **A Cloudflare R2 bucket** for photos → [R2_SETUP.md](R2_SETUP.md)
+2. **A Railway Storage Bucket** for photos → [STORAGE_SETUP.md](STORAGE_SETUP.md)
 3. *(Optional)* **Google OAuth** → [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md)
 4. **An admin account**, granted with one SQL statement → [SUPABASE_SETUP.md#6-create-the-first-admin](SUPABASE_SETUP.md#6-create-the-first-admin)
 
@@ -47,9 +47,9 @@ Without credentials the public pages (landing, legal, auth forms) still render, 
 - [ARCHITECTURE.md](ARCHITECTURE.md): how the pieces fit, request flows and design decisions
 - [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md): tables, RPC functions and RLS model
 - [SECURITY.md](SECURITY.md): threat model and controls
-- [SUPABASE_SETUP.md](SUPABASE_SETUP.md), [R2_SETUP.md](R2_SETUP.md) and [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md): external services
+- [SUPABASE_SETUP.md](SUPABASE_SETUP.md), [STORAGE_SETUP.md](STORAGE_SETUP.md) and [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md): external services
 - [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md): every variable, and whether it is public or secret
-- [DEPLOYMENT.md](DEPLOYMENT.md): Vercel deployment and free-tier limits
+- [DEPLOYMENT.md](DEPLOYMENT.md): Railway deployment, cron service and usage limits
 - [TESTING.md](TESTING.md): what is tested and how to run it
 - [MVP_ROADMAP.md](MVP_ROADMAP.md): status, known gaps and next steps
 
@@ -60,7 +60,7 @@ src/
   app/            routes: (auth), (app)/(main), admin, (legal), api/*, auth/* callbacks
   components/     UI by feature (discover, chat, chemistry, profile, safety, admin, ui/)
   lib/            env, constants, Zod schemas, Supabase clients, chemistry engine (pure)
-  server/         server-only logic: auth guards, R2, image pipeline, discovery, actions
+  server/         server-only logic: auth guards, photo storage, image pipeline, discovery, actions
   proxy.ts        session refresh (Next.js 16 "proxy", formerly middleware)
 supabase/
   migrations/     the only source of truth for the schema, RLS and SQL functions

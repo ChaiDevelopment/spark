@@ -8,7 +8,7 @@ let admin: SupabaseClient | undefined;
 /**
  * Service-role client. BYPASSES RLS — only for trusted server operations that
  * cannot be expressed as user-scoped queries:
- *   - photo pipeline writes (after the server validated the R2 object)
+ *   - photo pipeline writes (after the server validated and re-encoded the image)
  *   - reading both users' private answers to compute chemistry
  *   - account deletion (auth.admin.deleteUser)
  * Always derive the acting user from a verified session first.

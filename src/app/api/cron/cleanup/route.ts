@@ -1,15 +1,16 @@
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isR2Configured, isServiceRoleConfigured, serverEnv } from "@/lib/env.server";
+import { isStorageConfigured, isServiceRoleConfigured, serverEnv } from "@/lib/env.server";
 import { errorResponse, json } from "@/server/http";
-import { deleteObjects } from "@/server/r2";
+import { deleteObjects } from "@/server/storage";
 
 /**
- * Daily maintenance (Vercel Cron, see vercel.json):
- *   - abandoned uploads ('uploading' > 1h): delete staging object + record
- *   - rejected photos older than 30 days: delete R2 objects + record
+ * Daily maintenance — triggered by scripts/cron-cleanup.mjs (Railway cron
+ * service) or Vercel Cron (vercel.json):
+ *   - abandoned uploads ('uploading' > 1h): delete leftover objects + record
+ *   - rejected photos older than 30 days: delete storage objects + record
  *   - expired rate-limit windows (public.run_maintenance, service_role only)
- * Protected by CRON_SECRET (Vercel sends it as a Bearer token).
+ * Protected by CRON_SECRET, sent as a Bearer token.
  */
 export async function GET(req: Request) {
   const expected = `Bearer ${serverEnv.cronSecret}`;
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
   if (!serverEnv.cronSecret || got.length !== expected.length || !timingSafeEqual(Buffer.from(got), Buffer.from(expected))) {
     return errorResponse(401, "Unauthorized");
   }
-  if (!isServiceRoleConfigured() || !isR2Configured()) return errorResponse(503, "Not configured");
+  if (!isServiceRoleConfigured() || !isStorageConfigured()) return errorResponse(503, "Not configured");
 
   const admin = createAdminClient();
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();

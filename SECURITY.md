@@ -17,11 +17,11 @@ SPARK handles dating profiles, private messages, photos and dates of birth. The 
 | Unauthorized Realtime access | `postgres_changes` events respect RLS. Broadcast channels are private and authorized by policies on `realtime.messages`. | `0700` |
 | Minors | DOB is required, and the database trigger rejects anyone under 18 (Asia/Jakarta date). DOB can be set once, through an RPC. Users can report an "Underage concern". | `0200`, `0600` |
 | Location exposure | Only city, region and country are stored. No coordinates exist anywhere. | Schema |
-| Private photo leakage | Private R2 bucket. Presigned GET URLs expire after 10 minutes and are only issued for rows the caller can read under RLS. Object keys contain random UUIDs. | `src/server/r2.ts`, `/api/photos/view` |
-| Malicious uploads | Signed Content-Type and Content-Length. The server checks magic bytes and decodes with `sharp` using a pixel limit, rejecting animated images. It re-encodes to WebP, which **strips EXIF and GPS**, and deletes the original. Maximum 10 MB and 6 photos. | `src/server/images.ts`, `/api/photos/confirm` |
-| Uploading into someone else's area | Keys are generated on the server under `uploads/{sessionUserId}/`. `keyBelongsTo()` is checked again at confirmation. | `src/server/r2.ts` |
-| CSRF | SameSite=Lax session cookies, same-origin `Origin` checks on state-changing route handlers, and Server Actions' built-in origin checks | `src/server/http.ts` |
-| XSS | React escaping, no `dangerouslySetInnerHTML` with user content, and a strict CSP: `object-src 'none'`, `frame-ancestors 'none'`, and connections allowed only to Supabase and R2 | `next.config.ts` |
+| Private photo leakage | Private bucket (no public access). Presigned GET URLs expire after 10 minutes and are only issued for rows the caller can read under RLS. Object keys contain random UUIDs. | `src/server/storage.ts`, `/api/photos/view` |
+| Malicious uploads | The file is sent to the app, never straight to storage. The server checks magic bytes and decodes with `sharp` using a pixel limit, rejecting animated images. It re-encodes to WebP, which **strips EXIF and GPS**; the original is never stored. Maximum 10 MB and 6 photos. | `src/server/images.ts`, `/api/photos/upload` |
+| Uploading into someone else's area | Only the server writes to the bucket. Keys are generated server-side under `profiles/{sessionUserId}/`, a database constraint ties every key to its owner, and `keyBelongsTo()` is checked before deletes. | `src/server/storage.ts` |
+| CSRF | SameSite=Lax session cookies, same-origin `Origin` checks on state-changing route handlers (proxy-aware: compared with `X-Forwarded-Host`, `Host` and `NEXT_PUBLIC_APP_URL`), and Server Actions' built-in origin checks | `src/server/http.ts` |
+| XSS | React escaping, no `dangerouslySetInnerHTML` with user content, and a strict CSP: `object-src 'none'`, `frame-ancestors 'none'`, connections allowed only to Supabase, and images only from the storage endpoint | `next.config.ts` |
 | Clickjacking, sniffing, downgrade | `X-Frame-Options: DENY`, `nosniff`, HSTS, `Referrer-Policy`, and a locked-down `Permissions-Policy` | `next.config.ts` |
 | Brute force and abuse | Supabase Auth rate limits, plus `consume_rate_limit` for uploads, views, profile edits and account deletion, plus per-RPC limits for messages, blocks and reports | `0100`, `0600` |
 | Leaking secrets | Secrets are only in `env.server.ts` (`server-only`). No `NEXT_PUBLIC_` secrets. `.env*.local` is git-ignored. | `src/lib/env*.ts` |
@@ -31,7 +31,7 @@ SPARK handles dating profiles, private messages, photos and dates of birth. The 
 
 ## Account deletion and data retention
 `POST /api/account/delete` requires typed confirmation and is rate limited. It:
-1. deletes every R2 object belonging to the user;
+1. deletes every storage object belonging to the user;
 2. records a minimal `user_safety_events` row (user id only), for abuse investigations;
 3. deletes the Supabase Auth user. **ON DELETE CASCADE** then removes the profile, DOB, preferences, answers, results, likes, passes, matches, conversations and messages.
 

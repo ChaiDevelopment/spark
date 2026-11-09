@@ -6,18 +6,18 @@
  Browser (PWA)
    │  HTTPS, cookie session (@supabase/ssr)
    ▼
- Vercel — Next.js 16 App Router
+ Railway — Next.js 16 App Router (behind Railway's reverse proxy)
    ├─ proxy.ts ............ refreshes the Supabase session cookie on every request
    ├─ Server Components ... read data with the USER-SCOPED Supabase client (RLS applies)
    ├─ Server Actions ...... mutations (profile, likes, chat, safety, admin) → SQL RPCs
    └─ Route Handlers ...... /api/photos/*, /api/account/delete, /api/cron/cleanup
           │                         │
           ▼                         ▼
- Supabase                       Cloudflare R2 (private bucket)
+ Supabase                       Railway Storage Bucket (private, S3-compatible)
    Auth · Postgres · Realtime     profiles/{userId}/{uuid}.webp (+ _thumb.webp)
 ```
 
-**Supabase is the source of truth** for every record: accounts, profiles, preferences, answers, chemistry results, likes, passes, matches, chat, safety, notifications, admin data and entitlements. **R2 stores only image bytes.** Postgres stores R2 object keys and metadata, never URLs or binaries.
+**Supabase is the source of truth** for every record: accounts, profiles, preferences, answers, chemistry results, likes, passes, matches, chat, safety, notifications, admin data and entitlements. **The bucket stores only image bytes.** Postgres stores object keys and metadata, never URLs or binaries. Storage is provider-neutral (`S3_*` variables), so Cloudflare R2 or another S3-compatible service can be swapped in.
 
 ## Core principles
 
@@ -46,23 +46,19 @@
 - The DOB is set only through `set_date_of_birth()`. A trigger (`enforce_adult_dob`) rejects anyone under 18, measured in the Asia/Jakarta calendar.
 - `complete_onboarding()` re-checks the age, required fields and photos on the server.
 
-### Photo upload (R2)
-1. `POST /api/photos/upload-url`:
-   - authenticates the session and applies a rate limit (20 per hour);
-   - checks the 6-photo cap and the declared type and size;
-   - inserts a `profile_photos` row with `status='uploading'`;
-   - returns a presigned PUT URL valid for 5 minutes. Content-Type and Content-Length are signed.
-2. The browser PUTs the original image to a staging key: `uploads/{userId}/{uuid}`.
-3. `POST /api/photos/confirm` re-checks ownership, then:
-   - fetches the object (max 10 MB);
-   - verifies **magic bytes**;
-   - decodes the image with a pixel limit;
-   - auto-rotates it and **re-encodes it to WebP, which drops all EXIF/GPS data**;
-   - writes `profiles/{userId}/{uuid}.webp` (≤1600 px) and `_thumb.webp` (480×600);
-   - **deletes the original**;
-   - sets `status='pending'`, which places it in the moderation queue. If `PHOTO_MODERATION_MODE=auto`, it sets `'approved'` instead.
-4. `POST /api/photos/view` returns 10-minute presigned GET URLs. RLS decides which photo rows the caller can see, so a key the caller cannot read never gets signed.
-5. `DELETE /api/photos/[id]` and `POST /api/photos/reorder` handle deletion and ordering. Reordering goes through the `reorder_photos()` RPC.
+### Photo upload
+The browser sends the file to `POST /api/photos/upload` (multipart). The route:
+1. checks the same origin and the session, then applies a rate limit (20 per hour);
+2. rejects bodies over 10 MB and enforces the 6-photo cap;
+3. verifies **magic bytes**, decodes the image with a pixel limit, and rejects animated or tiny images;
+4. auto-rotates the image and **re-encodes it to WebP, which drops all EXIF/GPS data**: `profiles/{userId}/{uuid}.webp` (≤1600 px) and `_thumb.webp` (480×600);
+5. reserves the `profile_photos` row (a database trigger enforces the cap atomically), writes both objects, then sets `status='pending'`. That status places the photo in the moderation queue; with `PHOTO_MODERATION_MODE=auto` it is `'approved'` instead.
+
+**The original never reaches storage.** Because only the server writes to the bucket, the bucket needs **no CORS rules**. The upload route is excluded from `proxy.ts`, so the request body isn't buffered twice; it validates the session itself.
+
+Next:
+1. `POST /api/photos/view` returns 10-minute presigned GET URLs. RLS decides which photo rows the caller can see, so a key the caller cannot read never gets signed.
+2. `DELETE /api/photos/[id]` and `POST /api/photos/reorder` handle deletion and ordering. Reordering goes through the `reorder_photos()` RPC.
 
 The pipeline is versioned (`processing_version`). New variants such as AVIF or blur placeholders can be added in `src/server/images.ts` without changing the schema.
 
@@ -98,7 +94,7 @@ The pipeline is versioned (`processing_version`). New variants such as AVIF or b
 ## Free-tier awareness
 - Each open chat screen uses one Realtime channel for changes and one for typing. Typing events are throttled to one every 2.5 seconds. There is no polling.
 - Discovery fetches 20 cards at a time.
-- Photos are served as ~50–150 KB WebP files, with thumbnails for lists. R2 egress is free.
+- Photos are served as ~50–150 KB WebP files, with thumbnails for lists. Egress from the Railway bucket is free; viewers load photos directly from the bucket through presigned URLs, not through the app.
 - Rate-limit rows are pruned by the cleanup cron. Abandoned uploads and old rejected photos are deleted daily.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md#free-tier-limits) for quotas and how to monitor them.

@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <h2>Location</h2>
       <p>We do not collect GPS coordinates. We store only the city and province you enter. We remove location metadata (EXIF/GPS) from every uploaded photo.</p>
       <h2>Photos</h2>
-      <p>Photos are stored in a private Cloudflare R2 bucket and displayed only through short-lived signed links to people allowed to view your profile. Original uploads are deleted after processing.</p>
+      <p>Photos are stored in private cloud storage and displayed only through short-lived signed links to people allowed to view your profile. Original uploads are never stored: we keep only a re-encoded copy without location or camera data.</p>
       <h2>How we use data</h2>
       <ul>
         <li>To provide matching, chemistry scores, messaging and notifications.</li>
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         <li>We do not sell your personal data and we do not use paid AI services to analyse your profile.</li>
       </ul>
       <h2>Service providers</h2>
-      <p>Supabase (database and authentication), Cloudflare (image storage) and Vercel (hosting) process data on our behalf.</p>
+      <p>Supabase (database and authentication), Railway (hosting and image storage) process data on our behalf.</p>
       <h2>Retention and deletion</h2>
       <p>You can delete your account in Settings. This permanently removes your profile, photos, answers, matches and messages. To protect other members, records of safety reports and moderation decisions are retained with only an anonymous identifier.</p>
       <h2>Your rights</h2>

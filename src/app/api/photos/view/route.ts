@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { isR2Configured } from "@/lib/env.server";
+import { isStorageConfigured } from "@/lib/env.server";
 import { photoViewSchema } from "@/lib/validation/schemas";
 import { getApiUser } from "@/server/auth";
 import { errorResponse, json, parseBody } from "@/server/http";
-import { presignView, VIEW_URL_TTL_SECONDS } from "@/server/r2";
+import { presignView, VIEW_URL_TTL_SECONDS } from "@/server/storage";
 
 /**
  * Exchange photo ids for short-lived signed view URLs.
@@ -16,7 +16,7 @@ import { presignView, VIEW_URL_TTL_SECONDS } from "@/server/r2";
 export async function POST(req: Request) {
   const user = await getApiUser();
   if (!user) return errorResponse(401, "Please sign in again.");
-  if (!isR2Configured()) return json({ urls: {}, expiresIn: 0 });
+  if (!isStorageConfigured()) return json({ urls: {}, expiresIn: 0 });
 
   const body = await parseBody(req, photoViewSchema);
   if ("response" in body) return body.response;
