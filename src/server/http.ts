@@ -76,5 +76,6 @@ export function isSameOrigin(req: Request): boolean {
   } catch {
     /* ignore */
   }
+  add(process.env.RAILWAY_PUBLIC_DOMAIN); // runtime-injected public domain on Railway
   return allowed.has(originHost);
 }

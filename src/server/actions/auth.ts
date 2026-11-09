@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { publicEnv, isSupabaseConfigured } from "@/lib/env";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { safeNextPath } from "@/lib/utils";
+import { getAppUrl } from "@/server/app-url";
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from "@/lib/validation/schemas";
 
 const notConfigured = () => fail("SPARK isn't connected to Supabase yet. See SUPABASE_SETUP.md.");
@@ -20,7 +21,7 @@ export async function signUpAction(input: unknown): Promise<ActionResult<{ needs
     password: parsed.data.password,
     // Supabase verifies the address when the link is clicked, then lands on our
     // login page. Must be listed in Supabase → Auth → URL Configuration.
-    options: { emailRedirectTo: `${publicEnv.appUrl}/login?verified=1` },
+    options: { emailRedirectTo: `${await getAppUrl()}/login?verified=1` },
   });
   if (error) {
     if (error.code === "weak_password") return fail(error.message);
@@ -52,7 +53,7 @@ export async function signInWithGoogleAction(next?: string): Promise<ActionResul
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${publicEnv.appUrl}/auth/callback?next=${encodeURIComponent(safeNextPath(next))}` },
+    options: { redirectTo: `${await getAppUrl()}/auth/callback?next=${encodeURIComponent(safeNextPath(next))}` },
   });
   if (error || !data.url) return fail("Google sign-in isn't available right now.");
   redirect(data.url);
@@ -64,7 +65,7 @@ export async function forgotPasswordAction(input: unknown): Promise<ActionResult
   if (!parsed.success) return fail("Enter a valid email address.", parsed.error.flatten().fieldErrors);
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${publicEnv.appUrl}/auth/callback?next=/reset-password`,
+    redirectTo: `${await getAppUrl()}/auth/callback?next=/reset-password`,
   });
   // Always succeed: never reveal whether an account exists for this email.
   return ok(null);
