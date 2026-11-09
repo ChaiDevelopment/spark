@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
+import { publicEnv } from "@/lib/env";
 
 export function json<T>(body: T, init: ResponseInit = {}) {
   return NextResponse.json(body, {
@@ -26,13 +27,38 @@ export async function parseBody<S extends z.ZodType>(req: Request, schema: S): P
   return { data: parsed.data };
 }
 
-/** Same-origin check for state-changing route handlers (defence in depth against CSRF). */
+/**
+ * Same-origin check for state-changing route handlers (defence in depth against CSRF).
+ *
+ * Behind a reverse proxy (Railway, Render, Docker…) `req.url` carries the
+ * INTERNAL host (e.g. localhost:8080), so the Origin is compared with the
+ * public host instead: X-Forwarded-Host, Host, and the configured app URL.
+ */
 export function isSameOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
   if (!origin) return true; // non-browser clients; session cookie is SameSite=Lax anyway
+  let originHost: string;
   try {
-    return new URL(origin).host === new URL(req.url).host;
+    originHost = new URL(origin).host.toLowerCase();
   } catch {
     return false;
   }
+  const allowed = new Set<string>();
+  const add = (h: string | null | undefined) => {
+    const v = h?.split(",")[0]?.trim().toLowerCase();
+    if (v) allowed.add(v);
+  };
+  add(req.headers.get("x-forwarded-host"));
+  add(req.headers.get("host"));
+  try {
+    add(new URL(req.url).host);
+  } catch {
+    /* ignore */
+  }
+  try {
+    add(new URL(publicEnv.appUrl).host);
+  } catch {
+    /* ignore */
+  }
+  return allowed.has(originHost);
 }
