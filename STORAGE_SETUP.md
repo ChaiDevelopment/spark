@@ -21,7 +21,9 @@ Because the server does all the writing, **the bucket needs no CORS rules** and 
 4. Buckets are always private. Railway does not support public buckets.
 
 ## 2. Connect the bucket to the app
-Open the **photos** bucket and go to the **Credentials** tab. It lists `BUCKET`, `ENDPOINT`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY` and `REGION`, and says whether to use **virtual-hosted** or **path-style** URLs.
+**Easiest:** connect the bucket to the `spark` service. Railway draws an arrow on the canvas and adds `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL`, `AWS_S3_BUCKET_NAME` and `AWS_DEFAULT_REGION` to the service. SPARK reads these names directly, so nothing else is needed. Redeploy once so the build picks up the endpoint for the CSP.
+
+**Alternatively**, set explicit references. Open the **photos** bucket and go to the **Credentials** tab. It lists `BUCKET`, `ENDPOINT`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY` and `REGION`, and says whether to use **virtual-hosted** or **path-style** URLs.
 
 On the **spark** service, open **Variables** and add these **variable references**. Replace `photos` with your bucket service's name if it differs:
 

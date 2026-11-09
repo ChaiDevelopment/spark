@@ -9,7 +9,14 @@ const supabaseWs = supabaseUrl.replace(/^http/, "ws");
  * so allow the endpoint host and its subdomains. Read at build time.
  */
 function storageImgSources(): string {
-  const endpoint = (process.env.S3_ENDPOINT || process.env.ENDPOINT || process.env.R2_ENDPOINT || "").trim();
+  const endpoint = (
+    process.env.S3_ENDPOINT ||
+    process.env.AWS_ENDPOINT_URL_S3 ||
+    process.env.AWS_ENDPOINT_URL ||
+    process.env.ENDPOINT ||
+    process.env.R2_ENDPOINT ||
+    ""
+  ).trim();
   if (endpoint) {
     try {
       const { protocol, host } = new URL(endpoint);

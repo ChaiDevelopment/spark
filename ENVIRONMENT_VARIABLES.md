@@ -20,7 +20,7 @@ Copy `.env.example` to `.env.local` for development. In production, set these va
 | `CRON_SECRET` | **Secret** | In production | Random string of at least 32 characters, sent as `Authorization: Bearer …` to `/api/cron/cleanup` |
 | `CRON_TARGET_URL` | Cron service only | On the cron service | Base URL the cron script calls. Falls back to `NEXT_PUBLIC_APP_URL`. |
 
-Storage also accepts Railway's raw bucket variable names (`ENDPOINT`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`) and the legacy Cloudflare names (`R2_ACCOUNT_ID`, `R2_ENDPOINT`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). `S3_*` takes precedence.
+Storage also accepts the standard `AWS_*` names that Railway adds when a bucket is connected to a service (`AWS_ENDPOINT_URL`, `AWS_S3_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`), Railway's raw bucket variable names (`ENDPOINT`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`) and the legacy Cloudflare names (`R2_ACCOUNT_ID`, `R2_ENDPOINT`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`). `S3_*` takes precedence.
 
 ## Test-only variables
 

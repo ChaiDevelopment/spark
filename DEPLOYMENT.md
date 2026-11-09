@@ -42,7 +42,7 @@ Production runs on **Railway**, which hosts the Next.js app, the photo bucket an
 The app is reverse-proxied by Railway. The same-origin (CSRF) check compares the browser's `Origin` with `X-Forwarded-Host`, `Host` and `NEXT_PUBLIC_APP_URL`, so `NEXT_PUBLIC_APP_URL` must match the public domain exactly.
 
 ## 3. Photo bucket
-Follow [STORAGE_SETUP.md](STORAGE_SETUP.md). The bucket service should be named `photos` so that the references above resolve.
+Follow [STORAGE_SETUP.md](STORAGE_SETUP.md). If you connect the bucket to the `spark` service, Railway adds `AWS_*` variables that SPARK reads directly; in that case leave out the `S3_*` lines above. Otherwise, name the bucket `photos` so that the references resolve.
 
 ## 4. Cron service (daily cleanup)
 1. In the same project, choose **+ Create → GitHub Repo** and select the same repository again. Name the service `cron`.
