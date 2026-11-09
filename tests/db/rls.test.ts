@@ -326,6 +326,40 @@ describe("chemistry data", () => {
     ).toMatch(/row-level security/);
   });
 
+  it("saving answers works with the statements the app sends (insert-ignore + update option_keys)", async () => {
+    const upsertAll = `insert into public.chemistry_answers (user_id, question_id, questionnaire_version, option_keys)
+       select auth.uid(), id, 1, array[$1::text] from public.chemistry_questions where code = 'p_planner'
+       on conflict (user_id, question_id) do update set user_id = excluded.user_id, question_id = excluded.question_id,
+         questionnaire_version = excluded.questionnaire_version, option_keys = excluded.option_keys`;
+    // Regression: a PostgREST upsert (ON CONFLICT DO UPDATE SET <every column>) needs UPDATE on columns
+    // users must not change, so it is refused. The app must not use it.
+    expect(await rejects(asUser(db, carol, (q) => q(upsertAll, ["s2"])))).toMatch(/permission denied/);
+
+    // What saveChemistryAnswersAction does: insert new answers, ignoring existing ones…
+    const insertIgnore = `insert into public.chemistry_answers (user_id, question_id, questionnaire_version, option_keys)
+       select auth.uid(), id, 1, array[$1::text] from public.chemistry_questions where code = 'p_planner'
+       on conflict (user_id, question_id) do nothing`;
+    await asUser(db, carol, (q) => q(insertIgnore, ["s2"]));
+    await asUser(db, carol, (q) => q(insertIgnore, ["s5"])); // second save: no error, no change
+    // …then change existing answers through the one updatable column.
+    await asUser(db, carol, (q) =>
+      q(`update public.chemistry_answers set option_keys = array['s5']
+         where user_id = auth.uid() and question_id = (select id from public.chemistry_questions where code = 'p_planner')`),
+    );
+    const [row] = await asUser(db, carol, (q) =>
+      q<{ option_keys: string[] }>(`select option_keys from public.chemistry_answers a join public.chemistry_questions c on c.id = a.question_id
+         where a.user_id = auth.uid() and c.code = 'p_planner'`),
+    );
+    expect(row.option_keys).toEqual(["s5"]);
+    // Another user still cannot touch it.
+    await asUser(db, bob, (q) => q(`update public.chemistry_answers set option_keys = array['s1'] where user_id = $1`, [carol]));
+    const [still] = await asService(db, (q) =>
+      q<{ option_keys: string[] }>(`select option_keys from public.chemistry_answers a join public.chemistry_questions c on c.id = a.question_id
+         where a.user_id = $1 and c.code = 'p_planner'`, [carol]),
+    );
+    expect(still.option_keys).toEqual(["s5"]);
+  });
+
   it("rejects invalid options", async () => {
     expect(
       await rejects(
