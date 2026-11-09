@@ -52,7 +52,7 @@ The browser sends the file to `POST /api/photos/upload` (multipart). The route:
 2. rejects bodies over 10 MB and enforces the 6-photo cap;
 3. verifies **magic bytes**, decodes the image with a pixel limit, and rejects animated or tiny images;
 4. auto-rotates the image and **re-encodes it to WebP, which drops all EXIF/GPS data**: `profiles/{userId}/{uuid}.webp` (≤1600 px) and `_thumb.webp` (480×600);
-5. reserves the `profile_photos` row (a database trigger enforces the cap atomically), writes both objects, then sets `status='pending'`. That status places the photo in the moderation queue; with `PHOTO_MODERATION_MODE=auto` it is `'approved'` instead.
+5. reserves the `profile_photos` row (a database trigger enforces the cap atomically), writes both objects, then sets `status='approved'`, so the photo is live immediately. With `PHOTO_MODERATION_MODE=manual` it is `'pending'` instead and waits in the moderation queue.
 
 **The original never reaches storage.** Because only the server writes to the bucket, the bucket needs **no CORS rules**. The upload route is excluded from `proxy.ts`, so the request body isn't buffered twice; it validates the session itself.
 

@@ -28,7 +28,7 @@ The code for these exists, but nothing has run them against live services yet:
 **Next step:** create the Railway bucket (STORAGE_SETUP.md), fill in `S3_*` locally and on Railway, then run `E2E_SUPABASE=1 npm run test:e2e`.
 
 ## Known limitations and deliberate choices
-- **Photo moderation** is manual by default (`PHOTO_MODERATION_MODE=manual`). There is no automated nudity or face detection; a free option would need evaluation. `auto` mode approves photos after the technical checks only.
+- **Photo moderation** is automatic by default (`PHOTO_MODERATION_MODE=auto`): photos go live after technical checks only, so users can match right away. There is no automated nudity or face detection; reports and staff review are the safety net. Set `manual` to require approval before photos are shown.
 - **Typing status** uses Realtime Broadcast instead of a `typing_status` table. This avoids a database write per keystroke and saves quota.
 - **Email:** Supabase's built-in mailer sends only a few emails per hour. Custom SMTP is needed before inviting testers.
 - **Push notifications:** `device_tokens` and `notification_preferences` exist, but Web Push (VAPID and a sender) is not implemented. In-app notifications work.

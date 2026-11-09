@@ -16,7 +16,7 @@ Copy `.env.example` to `.env.local` for development. In production, set these va
 | `S3_REGION` | Server | No | Default `auto` |
 | `S3_FORCE_PATH_STYLE` | Server | No | `true` only if the provider requires path-style URLs |
 | `NEXT_PUBLIC_APP_URL` | Public | Yes | Public app URL without a trailing slash. Used for auth redirect links and for the same-origin check behind proxies. |
-| `PHOTO_MODERATION_MODE` | Server | No | `manual` (default): new photos wait for a moderator. `auto`: approved after the automated checks. |
+| `PHOTO_MODERATION_MODE` | Server | No | `auto` (default): photos go live right after the automated checks; staff can still reject them and users can report them. `manual`: new photos wait for a moderator. |
 | `CRON_SECRET` | **Secret** | In production | Random string of at least 32 characters, sent as `Authorization: Bearer …` to `/api/cron/cleanup` |
 | `CRON_TARGET_URL` | Cron service only | On the cron service | Base URL the cron script calls. Falls back to `NEXT_PUBLIC_APP_URL`. |
 

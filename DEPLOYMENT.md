@@ -26,7 +26,7 @@ Production runs on **Railway**, which hosts the Next.js app, the photo bucket an
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
    SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
    NEXT_PUBLIC_APP_URL=https://<your-domain>.up.railway.app
-   PHOTO_MODERATION_MODE=manual
+   PHOTO_MODERATION_MODE=auto
    CRON_SECRET=<random 64 hex chars: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
    S3_ENDPOINT=${{photos.ENDPOINT}}
    S3_BUCKET=${{photos.BUCKET}}

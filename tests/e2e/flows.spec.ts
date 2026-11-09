@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  * Requirements:
  *   - Email confirmations DISABLED in the test project (or use Inbucket locally),
  *     so sign-up returns a session immediately.
- *   - PHOTO_MODERATION_MODE=auto and R2 configured, so photos become visible.
+ *   - PHOTO_MODERATION_MODE=auto (default) and photo storage configured, so photos become visible.
  */
 const enabled = process.env.E2E_SUPABASE === "1";
 test.skip(!enabled, "Set E2E_SUPABASE=1 with real Supabase + R2 credentials to run journey tests.");

@@ -33,8 +33,12 @@ export const serverEnv = {
   storageRegion: read("S3_REGION", "AWS_REGION", "AWS_DEFAULT_REGION", "REGION") || "auto",
   /** Only for providers that require path-style URLs (e.g. older Railway buckets, MinIO). */
   storageForcePathStyle: read("S3_FORCE_PATH_STYLE") === "true",
-  /** 'manual' (default): photos wait for moderator approval. 'auto': approved after automated checks. */
-  photoModerationMode: read("PHOTO_MODERATION_MODE") === "auto" ? "auto" : "manual",
+  /**
+   * 'auto' (default): photos go live right after the automated checks (real
+   * image, size, not animated; EXIF stripped). Staff can still reject them and
+   * users can report them. 'manual': photos wait for moderator approval.
+   */
+  photoModerationMode: read("PHOTO_MODERATION_MODE") === "manual" ? "manual" : "auto",
   cronSecret: read("CRON_SECRET"),
 } as const;
 
