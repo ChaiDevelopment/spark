@@ -77,7 +77,7 @@ function PasswordInput(props: React.ComponentProps<typeof Input>) {
 }
 
 // -------------------------------------------------------------------- Login
-export function LoginForm({ next, error }: { next?: string; error?: string }) {
+export function LoginForm({ next, error, verified }: { next?: string; error?: string; verified?: boolean }) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(
     error === "link" ? "That link is invalid or has expired." : error === "oauth" ? "Google sign-in was cancelled or failed." : null,
@@ -102,6 +102,11 @@ export function LoginForm({ next, error }: { next?: string; error?: string }) {
       </div>
       <Divider />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        {verified && !formError && (
+          <p role="status" className="rounded-2xl bg-mint/15 px-4 py-3 text-sm font-medium text-ink">
+            Email verified — sign in to continue.
+          </p>
+        )}
         {formError && (
           <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
             {formError}

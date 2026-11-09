@@ -18,7 +18,9 @@ export async function signUpAction(input: unknown): Promise<ActionResult<{ needs
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { emailRedirectTo: `${publicEnv.appUrl}/auth/callback?next=/onboarding` },
+    // Supabase verifies the address when the link is clicked, then lands on our
+    // login page. Must be listed in Supabase → Auth → URL Configuration.
+    options: { emailRedirectTo: `${publicEnv.appUrl}/login?verified=1` },
   });
   if (error) {
     if (error.code === "weak_password") return fail(error.message);

@@ -21,7 +21,15 @@ export async function GET(request: NextRequest) {
   if (tokenHash && type && TYPES.has(type)) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return redirectTo(next);
+    if (!error) {
+      // Sign-up confirmation: the email is now verified. Send people to the
+      // login page (product decision) rather than signing them in silently.
+      if (type === "signup" || type === "email") {
+        await supabase.auth.signOut();
+        return redirectTo("/login?verified=1");
+      }
+      return redirectTo(next);
+    }
   }
   return redirectTo("/login?error=link");
 }
