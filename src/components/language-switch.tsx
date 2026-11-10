@@ -6,8 +6,8 @@ import { setLocaleAction } from "@/lib/i18n/actions";
 import { useT } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
-/** ID / EN toggle. Shown on every page, top right. */
-export function LanguageSwitch() {
+/** ID / EN toggle. Placed inside each page header, so it never covers header icons. */
+export function LanguageSwitch({ className }: { className?: string }) {
   const { locale, t } = useT();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -25,8 +25,9 @@ export function LanguageSwitch() {
       role="group"
       aria-label={t("lang.label")}
       className={cn(
-        "fixed right-3 top-3 z-[70] inline-flex overflow-hidden rounded-full border border-line bg-white/90 text-xs font-bold shadow-soft backdrop-blur",
+        "inline-flex shrink-0 overflow-hidden rounded-full border border-line bg-white text-xs font-bold",
         pending && "opacity-60",
+        className,
       )}
     >
       {(["id", "en"] as const).map((code) => (
@@ -37,7 +38,9 @@ export function LanguageSwitch() {
           aria-pressed={locale === code}
           className={cn(
             "px-3 py-1.5 transition",
-            locale === code ? "bg-ink text-white" : "text-ink-soft hover:bg-cream hover:text-ink",
+            locale === code
+              ? "bg-ink text-white"
+              : "text-ink-soft hover:bg-cream hover:text-ink",
           )}
         >
           {t(code === "id" ? "lang.id" : "lang.en")}

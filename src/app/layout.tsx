@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { PwaRegister, NetworkStatus } from "@/components/pwa";
-import { LanguageSwitch } from "@/components/language-switch";
 import { LocaleProvider } from "@/lib/i18n/context";
 import { getLocale } from "@/lib/i18n/server";
 import { publicEnv } from "@/lib/env";
@@ -35,7 +34,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-dvh">
         <LocaleProvider locale={locale}>
           <NetworkStatus />
-          <LanguageSwitch />
           {children}
           <Toaster position="top-center" richColors closeButton toastOptions={{ className: "font-sans" }} />
           <PwaRegister />

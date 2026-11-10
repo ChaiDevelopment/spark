@@ -8,6 +8,7 @@ import { Bell, Flame, Heart, MessageCircle, Settings, Shield, Sparkles, UserRoun
 import { Logo } from "@/components/brand";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/context";
+import { LanguageSwitch } from "@/components/language-switch";
 import type { MessageKey } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
@@ -115,7 +116,10 @@ export function AppShell({
             </Link>
           )}
         </nav>
-        <p className="truncate px-3 text-sm text-ink-faint">Signed in as {displayName || "you"}</p>
+        <div className="px-3">
+          <LanguageSwitch />
+        </div>
+        <p className="truncate px-3 pt-3 text-sm text-ink-faint">Signed in as {displayName || "you"}</p>
       </aside>
 
       <div className="flex min-h-dvh min-w-0 flex-col">
@@ -124,6 +128,7 @@ export function AppShell({
           <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line/60 bg-canvas/85 px-4 py-3 backdrop-blur md:hidden">
             <Logo href="/discover" />
             <div className="flex items-center gap-1">
+              <LanguageSwitch />
               {staff && (
                 <Link href="/admin" className="rounded-full p-2.5 text-lavender-deep" aria-label="Admin">
                   <Shield className="size-5" />
