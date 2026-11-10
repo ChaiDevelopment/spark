@@ -11,7 +11,8 @@ export interface ViewerProfile {
   gender: string | null;
   account_status: "active" | "suspended" | "banned" | "deactivated";
   suspended_reason: string | null;
-  suspended_until: string | null;
+  /** Only read for suspended accounts (see getViewer). */
+  suspended_until?: string | null;
   onboarding_completed_at: string | null;
   completion_percent: number;
   is_visible: boolean;
@@ -38,15 +39,20 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const { data, error } = await supabase.auth.getClaims();
   const sub = data?.claims?.sub;
   if (error || !sub) return null;
+  // Only columns that exist in every database version: a missing column makes
+  // this query fail silently and every signed-in person looks profile-less.
   let { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, gender, account_status, suspended_reason, suspended_until, onboarding_completed_at, completion_percent, is_visible")
+    .select("id, display_name, gender, account_status, suspended_reason, onboarding_completed_at, completion_percent, is_visible")
     .eq("id", sub)
     .maybeSingle<ViewerProfile>();
   // A suspension whose end date has passed is lifted as soon as the person returns.
-  if (profile?.account_status === "suspended" && profile.suspended_until && new Date(profile.suspended_until) < new Date()) {
-    const { data: lifted } = await supabase.rpc("lift_my_expired_suspension");
-    if (lifted) profile = { ...profile, account_status: "active", suspended_until: null, suspended_reason: null };
+  if (profile?.account_status === "suspended") {
+    const { data: until } = await supabase.from("profiles").select("suspended_until").eq("id", sub).maybeSingle<{ suspended_until: string | null }>();
+    if (until?.suspended_until && new Date(until.suspended_until) < new Date()) {
+      const { data: lifted } = await supabase.rpc("lift_my_expired_suspension");
+      if (lifted) profile = { ...profile, account_status: "active", suspended_reason: null };
+    }
   }
   return { userId: sub, email: (data.claims.email as string | undefined) ?? null, profile: profile ?? null };
 });

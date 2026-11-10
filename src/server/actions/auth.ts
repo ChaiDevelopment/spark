@@ -49,13 +49,14 @@ export async function signInAction(input: unknown, next?: string): Promise<Actio
   const { data: claims } = await supabase.auth.getClaims();
   const uid = claims?.claims?.sub;
   if (uid) {
-    const { data: prof } = await supabase.from("profiles").select("account_status, suspended_until").eq("id", uid).maybeSingle();
+    const { data: prof } = await supabase.from("profiles").select("account_status").eq("id", uid).maybeSingle();
     if (prof && prof.account_status !== "active") {
       await supabase.auth.signOut();
       if (prof.account_status === "banned") return fail("This account has been permanently banned.");
       if (prof.account_status === "suspended") {
-        const until = prof.suspended_until
-          ? ` until ${new Date(prof.suspended_until).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" })} WIB`
+        const { data: row } = await supabase.from("profiles").select("suspended_until").eq("id", uid).maybeSingle();
+        const until = row?.suspended_until
+          ? ` until ${new Date(row.suspended_until).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" })} WIB`
           : "";
         return fail(`This account is suspended${until}.`);
       }
