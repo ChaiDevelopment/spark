@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { PwaRegister, NetworkStatus } from "@/components/pwa";
+import { LanguageSwitch } from "@/components/language-switch";
+import { LocaleProvider } from "@/lib/i18n/context";
+import { getLocale } from "@/lib/i18n/server";
 import { publicEnv } from "@/lib/env";
 import "./globals.css";
 
@@ -25,14 +28,18 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getLocale();
   return (
-    <html lang="en" className={`${jakarta.variable} ${inter.variable} antialiased`}>
+    <html lang={locale} className={`${jakarta.variable} ${inter.variable} antialiased`}>
       <body className="min-h-dvh">
-        <NetworkStatus />
-        {children}
-        <Toaster position="top-center" richColors closeButton toastOptions={{ className: "font-sans" }} />
-        <PwaRegister />
+        <LocaleProvider locale={locale}>
+          <NetworkStatus />
+          <LanguageSwitch />
+          {children}
+          <Toaster position="top-center" richColors closeButton toastOptions={{ className: "font-sans" }} />
+          <PwaRegister />
+        </LocaleProvider>
       </body>
     </html>
   );

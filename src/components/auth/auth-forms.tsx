@@ -19,6 +19,7 @@ import {
 } from "@/server/actions/auth";
 import { forgotPasswordSchema, resetPasswordSchema, signInSchema, signUpSchema } from "@/lib/validation/schemas";
 import { publicEnv } from "@/lib/env";
+import { useT } from "@/lib/i18n/context";
 
 function GoogleIcon() {
   return (
@@ -93,8 +94,9 @@ function PasswordInput(props: React.ComponentProps<typeof Input>) {
 // -------------------------------------------------------------------- Login
 export function LoginForm({ next, error, verified }: { next?: string; error?: string; verified?: boolean }) {
   const router = useRouter();
+  const { t } = useT();
   const [formError, setFormError] = useState<string | null>(
-    error === "link" ? "That link is invalid or has expired." : error === "oauth" ? "Google sign-in was cancelled or failed." : null,
+    error === "link" ? t("auth.invalidLink") : error === "oauth" ? t("auth.googleFailed") : null,
   );
   const form = useForm<z.infer<typeof signInSchema>>({ resolver: zodResolver(signInSchema), defaultValues: { email: "", password: "" } });
   const { errors, isSubmitting } = form.formState;
@@ -109,13 +111,13 @@ export function LoginForm({ next, error, verified }: { next?: string; error?: st
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-extrabold">Welcome back</h1>
-      <p className="mt-2 text-ink-soft">Good to see you. Let&apos;s find your spark.</p>
+      <h1 className="font-display text-3xl font-extrabold">{t("auth.welcomeBack")}</h1>
+      <p className="mt-2 text-ink-soft">{t("auth.welcomeSub")}</p>
       <SocialSignIn next={next} />
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {verified && !formError && (
           <p role="status" className="rounded-2xl bg-mint/15 px-4 py-3 text-sm font-medium text-ink">
-            Email verified — sign in to continue.
+            {t("auth.verified")}
           </p>
         )}
         {formError && (
@@ -123,25 +125,25 @@ export function LoginForm({ next, error, verified }: { next?: string; error?: st
             {formError}
           </p>
         )}
-        <Field label="Email" htmlFor="email" error={errors.email?.message}>
+        <Field label={t("auth.email")} htmlFor="email" error={errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...form.register("email")} />
         </Field>
-        <Field label="Password" htmlFor="password" error={errors.password?.message}>
+        <Field label={t("auth.password")} htmlFor="password" error={errors.password?.message}>
           <PasswordInput id="password" autoComplete="current-password" aria-invalid={!!errors.password} {...form.register("password")} />
         </Field>
         <div className="text-right">
           <Link href="/forgot-password" className="text-sm font-semibold text-coral-deep hover:underline">
-            Forgot password?
+            {t("auth.forgot")}
           </Link>
         </div>
         <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
-          Log in
+          {t("auth.logIn")}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-ink-soft">
-        New to SPARK?{" "}
+        {t("auth.newHere")}{" "}
         <Link href="/signup" className="font-semibold text-coral-deep hover:underline">
-          Create an account
+          {t("auth.createAccount")}
         </Link>
       </p>
     </div>

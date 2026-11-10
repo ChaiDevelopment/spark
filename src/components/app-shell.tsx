@@ -7,14 +7,16 @@ import { toast } from "sonner";
 import { Bell, Flame, Heart, MessageCircle, Settings, Shield, Sparkles, UserRound } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/lib/i18n/context";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/discover", label: "Discover", icon: Flame },
-  { href: "/likes", label: "Likes", icon: Heart },
-  { href: "/matches", label: "Matches", icon: Sparkles },
-  { href: "/chat", label: "Chats", icon: MessageCircle },
-  { href: "/me", label: "Profile", icon: UserRound },
+const NAV: { href: string; label: MessageKey; icon: typeof Flame }[] = [
+  { href: "/discover", label: "nav.discover", icon: Flame },
+  { href: "/likes", label: "nav.likes", icon: Heart },
+  { href: "/matches", label: "nav.matches", icon: Sparkles },
+  { href: "/chat", label: "nav.chats", icon: MessageCircle },
+  { href: "/me", label: "nav.profile", icon: UserRound },
 ];
 
 function isActive(path: string, href: string) {
@@ -34,6 +36,7 @@ export function AppShell({
   unread: number;
   staff: boolean;
 }) {
+  const { t } = useT();
   const path = usePathname();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(unread);
@@ -89,7 +92,7 @@ export function AppShell({
               )}
               aria-current={isActive(path, href) ? "page" : undefined}
             >
-              <Icon className={cn("size-5", isActive(path, href) && "text-coral")} aria-hidden /> {label}
+              <Icon className={cn("size-5", isActive(path, href) && "text-coral")} aria-hidden /> {t(label)}
             </Link>
           ))}
           <div className="my-3 h-px bg-line" />
@@ -97,18 +100,18 @@ export function AppShell({
             href="/notifications"
             className={cn("flex items-center gap-3 rounded-2xl px-3 py-3 font-semibold text-ink-soft hover:bg-cream hover:text-ink", isActive(path, "/notifications") && "bg-cream text-ink")}
           >
-            <Bell className="size-5" aria-hidden /> Notifications
+            <Bell className="size-5" aria-hidden /> {t("nav.notifications")}
             {unreadCount > 0 && <span className="ml-auto rounded-full bg-coral px-2 py-0.5 text-xs font-bold text-white">{unreadCount}</span>}
           </Link>
           <Link
             href="/settings"
             className={cn("flex items-center gap-3 rounded-2xl px-3 py-3 font-semibold text-ink-soft hover:bg-cream hover:text-ink", isActive(path, "/settings") && "bg-cream text-ink")}
           >
-            <Settings className="size-5" aria-hidden /> Settings
+            <Settings className="size-5" aria-hidden /> {t("nav.settings")}
           </Link>
           {staff && (
             <Link href="/admin" className="flex items-center gap-3 rounded-2xl px-3 py-3 font-semibold text-lavender-deep hover:bg-lavender/10">
-              <Shield className="size-5" aria-hidden /> Admin
+              <Shield className="size-5" aria-hidden /> {t("nav.admin")}
             </Link>
           )}
         </nav>
@@ -155,7 +158,7 @@ export function AppShell({
                       <span className={cn("grid h-8 w-12 place-items-center rounded-full transition", active && "bg-coral/12")}>
                         <Icon className={cn("size-5", active && "text-coral")} aria-hidden />
                       </span>
-                      {label}
+                      {t(label)}
                     </Link>
                   </li>
                 );

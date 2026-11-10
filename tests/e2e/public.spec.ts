@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+// Assertions below check English copy; the app defaults to Bahasa Indonesia.
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([{ name: "spark_lang", value: "en", domain: "localhost", path: "/" }]);
+});
+
 test.describe("public pages", () => {
   test("landing page renders the brand and primary CTA", async ({ page }) => {
     await page.goto("/");
