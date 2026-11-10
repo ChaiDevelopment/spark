@@ -74,3 +74,14 @@ export const MAX_MESSAGE_LENGTH = 2000;
 export function labelFor<T extends readonly { value: string; label: string }[]>(list: T, value: string | null | undefined) {
   return list.find((x) => x.value === value)?.label ?? null;
 }
+
+export const PHOTO_REJECT_REASONS = [
+  { value: "face_not_visible", label: "Face isn't clearly visible" },
+  { value: "not_a_person", label: "Not a photo of a person" },
+  { value: "inappropriate", label: "Nudity, violence or hateful content" },
+  { value: "looks_underage", label: "Person may be under 18" },
+  { value: "other", label: "Other (add a note)" },
+] as const;
+export type PhotoRejectReason = (typeof PHOTO_REJECT_REASONS)[number]["value"];
+
+export const SUSPEND_DAY_OPTIONS = [1, 3, 7, 14, 30, 90] as const;

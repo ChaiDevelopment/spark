@@ -9,8 +9,9 @@ export interface ViewerProfile {
   id: string;
   display_name: string;
   gender: string | null;
-  account_status: "active" | "suspended" | "deactivated";
+  account_status: "active" | "suspended" | "banned" | "deactivated";
   suspended_reason: string | null;
+  suspended_until: string | null;
   onboarding_completed_at: string | null;
   completion_percent: number;
   is_visible: boolean;
@@ -37,11 +38,16 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const { data, error } = await supabase.auth.getClaims();
   const sub = data?.claims?.sub;
   if (error || !sub) return null;
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, gender, account_status, suspended_reason, onboarding_completed_at, completion_percent, is_visible")
+    .select("id, display_name, gender, account_status, suspended_reason, suspended_until, onboarding_completed_at, completion_percent, is_visible")
     .eq("id", sub)
     .maybeSingle<ViewerProfile>();
+  // A suspension whose end date has passed is lifted as soon as the person returns.
+  if (profile?.account_status === "suspended" && profile.suspended_until && new Date(profile.suspended_until) < new Date()) {
+    const { data: lifted } = await supabase.rpc("lift_my_expired_suspension");
+    if (lifted) profile = { ...profile, account_status: "active", suspended_until: null, suspended_reason: null };
+  }
   return { userId: sub, email: (data.claims.email as string | undefined) ?? null, profile: profile ?? null };
 });
 
@@ -64,11 +70,16 @@ export const getStaffRole = cache(async (): Promise<"admin" | "moderator" | null
   return (data as "admin" | "moderator" | null) ?? null;
 });
 
+/**
+ * Moderation area guard. Anonymous visitors, regular users, suspended users and
+ * anyone without a staff role all get the same 404: the area isn't revealed.
+ */
 export async function requireStaff() {
-  const viewer = await requireViewer({ allowIncomplete: true });
+  const viewer = await getViewer();
+  if (!viewer?.profile || viewer.profile.account_status !== "active") notFound();
   const role = await getStaffRole();
-  if (!role) notFound(); // don't reveal that the admin area exists
-  return { ...viewer, role };
+  if (!role) notFound();
+  return { ...(viewer as ActiveViewer), role };
 }
 
 /** For route handlers / actions: returns the active user, or null (caller responds 401). */

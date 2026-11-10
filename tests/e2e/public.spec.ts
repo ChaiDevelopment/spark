@@ -52,10 +52,18 @@ test.describe("auth forms", () => {
 });
 
 test.describe("route protection", () => {
-  for (const path of ["/discover", "/chat", "/me", "/settings", "/admin", "/onboarding", "/chat/00000000-0000-4000-8000-000000000000"]) {
+  for (const path of ["/discover", "/chat", "/me", "/settings", "/onboarding", "/chat/00000000-0000-4000-8000-000000000000"]) {
     test(`${path} requires sign-in`, async ({ page }) => {
       await page.goto(path);
       await expect(page).toHaveURL(/\/login/);
+    });
+  }
+
+  // The moderation area answers every non-staff visitor with the same 404.
+  for (const path of ["/admin", "/admin/photos", "/admin/reports", "/admin/users", "/admin/audit"]) {
+    test(`${path} is hidden (404) from visitors`, async ({ page }) => {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(404);
     });
   }
 });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ClipboardList, Image as ImageIcon, LayoutDashboard, ShieldCheck, Users } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { requireStaff } from "@/server/auth";
 
@@ -9,7 +9,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const { role, profile } = await requireStaff();
   const nav = [
     { href: "/admin", label: "Overview", icon: LayoutDashboard },
-    { href: "/admin/moderation", label: "Moderation", icon: ShieldCheck },
+    { href: "/admin/photos", label: "Photos", icon: ImageIcon },
+    { href: "/admin/reports", label: "Reports", icon: ShieldCheck },
+    { href: "/admin/users", label: "Users", icon: Users },
     ...(role === "admin" ? [{ href: "/admin/audit", label: "Audit log", icon: ClipboardList }] : []),
   ];
   return (

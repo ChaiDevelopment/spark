@@ -2,9 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured, publicEnv } from "@/lib/env";
 
+// /admin is deliberately NOT here: the moderation guard (requireStaff) answers
+// every non-staff visitor with a 404 rather than a login redirect.
 const PROTECTED_PREFIXES = [
   "/onboarding", "/discover", "/profile", "/likes", "/matches", "/chat", "/me", "/chemistry",
-  "/settings", "/notifications", "/report", "/admin", "/suspended",
+  "/settings", "/notifications", "/report", "/suspended",
 ];
 const AUTH_PAGES = ["/login", "/signup"];
 

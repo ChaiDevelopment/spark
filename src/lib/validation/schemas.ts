@@ -127,13 +127,36 @@ export const photoViewSchema = z.object({
 export const reorderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(6) });
 
 // ---------------------------------------------------------------- Admin
-export const adminSuspendSchema = z.object({ userId: z.uuid(), suspend: z.boolean(), reason: z.string().trim().max(300).optional() });
-export const adminReportSchema = z.object({
-  reportId: z.uuid(),
-  status: z.enum(["in_review", "actioned", "dismissed"]),
-  notes: z.string().trim().max(1000).optional(),
+// Fixed codes keep reasons consistent in the audit log; labels live in constants.ts.
+const photoReasonCode = z.enum(["face_not_visible", "not_a_person", "inappropriate", "looks_underage", "other"]);
+const moderationNote = z.string().trim().max(300).optional();
+
+export const adminPhotoSchema = z.object({
+  photoId: z.uuid(),
+  approve: z.boolean(),
+  reasonCode: photoReasonCode.optional(),
+  note: moderationNote,
 });
-export const adminPhotoSchema = z.object({ photoId: z.uuid(), approve: z.boolean(), reason: z.string().trim().max(300).optional() });
+export const adminBulkPhotoSchema = z.object({
+  photoIds: z.array(z.uuid()).min(1, { error: "Select at least one photo" }).max(50),
+  approve: z.boolean(),
+  reasonCode: photoReasonCode.optional(),
+  note: moderationNote,
+});
+export const adminModerateSchema = z.object({
+  userId: z.uuid(),
+  action: z.enum(["warn", "suspend", "ban", "unsuspend"]),
+  reason: moderationNote,
+  days: z.number().int().min(1).max(365).optional(),
+});
+export const adminResolveSchema = z.object({
+  reportId: z.uuid(),
+  outcome: z.enum(["dismiss", "warn", "suspend", "ban"]),
+  reason: moderationNote,
+  days: z.number().int().min(1).max(365).optional(),
+  removePhotos: z.boolean().default(false),
+});
+export const adminReportStatusSchema = z.object({ reportId: z.uuid(), status: z.literal("in_review") });
 export const adminRoleSchema = z.object({ userId: z.uuid(), role: z.enum(["moderator", "admin"]).nullable() });
 
 export const deleteAccountSchema = z.object({ confirm: z.literal("DELETE", { error: 'Type "DELETE" to confirm' }) });

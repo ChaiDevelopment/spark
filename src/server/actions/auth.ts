@@ -44,6 +44,24 @@ export async function signInAction(input: unknown, next?: string): Promise<Actio
     if (error.status === 429) return fail("Too many attempts. Please wait a minute and try again.");
     return fail("That email and password don't match.");
   }
+  // Suspended and banned accounts can't sign in: end the session we just created.
+  await supabase.rpc("lift_my_expired_suspension");
+  const { data: claims } = await supabase.auth.getClaims();
+  const uid = claims?.claims?.sub;
+  if (uid) {
+    const { data: prof } = await supabase.from("profiles").select("account_status, suspended_until").eq("id", uid).maybeSingle();
+    if (prof && prof.account_status !== "active") {
+      await supabase.auth.signOut();
+      if (prof.account_status === "banned") return fail("This account has been permanently banned.");
+      if (prof.account_status === "suspended") {
+        const until = prof.suspended_until
+          ? ` until ${new Date(prof.suspended_until).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" })} WIB`
+          : "";
+        return fail(`This account is suspended${until}.`);
+      }
+      return fail("This account is unavailable.");
+    }
+  }
   return ok({ redirectTo: safeNextPath(next) });
 }
 
