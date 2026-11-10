@@ -166,6 +166,11 @@ describe("suspension and ban effects", () => {
     expect(await statusOf(target)).toBe("banned");
     await asUser(db, modA, (q) => q(`select public.admin_moderate_user($1, 'ban', 'Scam: asks for money')`, [target]));
     expect(await rejects(asUser(db, modA, (q) => q(`select public.admin_moderate_user($1, 'suspend', 'x', 7)`, [target])))).toMatch(/banned/);
+    // A moderator cannot lift a ban; an admin can.
+    expect(await rejects(asUser(db, modA, (q) => q(`select public.admin_moderate_user($1, 'unsuspend', 'Appeal accepted')`, [target])))).toMatch(
+      /Only admins can restore/,
+    );
+    expect(await statusOf(target)).toBe("banned");
     const admin = await newStaff("admin");
     await asUser(db, admin, (q) => q(`select public.admin_moderate_user($1, 'unsuspend', 'Appeal accepted')`, [target]));
     expect(await statusOf(target)).toBe("active");

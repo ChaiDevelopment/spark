@@ -181,6 +181,9 @@ begin
 
   if p_action = 'unsuspend' then
     if p.account_status = 'active' then return; end if;          -- already restored
+    if p.account_status = 'banned' and not private.is_admin() then
+      raise exception 'Only admins can restore a banned account' using errcode = '42501';
+    end if;
     update public.profiles set account_status = 'active', suspended_until = null, suspended_reason = null where id = p_user;
     insert into public.moderation_actions (actor_id, subject_user_id, action, notes)
     values (auth.uid(), p_user, 'unsuspend', left(v_reason, 1000));
